@@ -73,8 +73,11 @@ namespace TrideDashModder
         float startX = 0.00f;
         string lastStartX = "";
         float originalStartX = 0.00f;
+        string newStartY = "0.00";
+        float startY = 0.00f;
+        string lastStartY = "";
+        float originalStartY = 0.00f;
         bool speedhackWasEnabled = false;
-        bool startposWasEnabled = false;
         bool startposCurrentlyEnabled = false;
         public override void OnUpdate()
         {
@@ -95,7 +98,10 @@ namespace TrideDashModder
             //Speedhack
             if (Input.GetKeyDown(KeyCode.T))
             {
-                cube player = GameObject.Find("Player").GetComponent<cube>();
+                try
+                {
+                    cube player = GameObject.Find("Player").GetComponent<cube>();
+                } catch { }
                 if (isSlowed)
                 {
                     Time.timeScale = 1f;
@@ -249,22 +255,6 @@ namespace TrideDashModder
                     speedhackWasEnabled = false;
                 }
             }
-            if (inGame && startposCurrentlyEnabled)
-            {
-                startposWasEnabled = true;
-            }
-            if (!inGame)
-            {
-                startposWasEnabled = false;
-            }
-            if (inGame)
-            {
-                cube player = GameObject.Find("Player").GetComponent<cube>();
-                if (!startposCurrentlyEnabled && lastFrameAttempts != player.attemptCount)
-                {
-                    startposWasEnabled = false;
-                }
-            }
 
             // Windowed mode
             if (Input.GetKeyDown(KeyCode.W) && SceneManager.GetActiveScene().name != "Editor")
@@ -357,12 +347,11 @@ namespace TrideDashModder
             {
                 cube player = GameObject.Find("Player").GetComponent<cube>();
                 Transform rp = player.respawnPoint;
-                if(startX != originalStartX)
+                if(startX != originalStartX || startY != originalStartY)
                 {
                     startposCurrentlyEnabled = true;
-                    MelonLogger.Msg((startX, originalStartX));
                 }
-                rp.position = new Vector3(startX, rp.position.y);
+                rp.position = new Vector3(startX, startY);
             }
         }
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -381,33 +370,41 @@ namespace TrideDashModder
                 }
 
                 // Percent bar
-                minx = 9999999999999999;
-                maxx = -9999999999999999;
-                string name = PlayerPrefs.GetString("levelName");
-                string path = localappdata + @"\saves\" + name + ".txt";
-                string level = File.ReadAllText(path);
-                level = level.Substring(level.IndexOf("§") + 1);
-                level = level.Substring(level.IndexOf("§") + 1);
-                level = level.Substring(level.IndexOf("§") + 1);
-                level = level.Substring(level.IndexOf("{") + 3);
-                string[] levelMap = level.Split(';');
-
-                foreach (string prop in levelMap)
+                try
                 {
-                    if (prop.Contains("pos:"))
+                    minx = 9999999999999999;
+                    maxx = -9999999999999999;
+                    string name = PlayerPrefs.GetString("levelName");
+                    string path = localappdata + @"\saves\" + name + ".txt";
+                    string level = File.ReadAllText(path);
+                    level = level.Substring(level.IndexOf("§") + 1);
+                    level = level.Substring(level.IndexOf("§") + 1);
+                    level = level.Substring(level.IndexOf("§") + 1);
+                    level = level.Substring(level.IndexOf("{") + 3);
+                    string[] levelMap = level.Split(';');
+                    foreach (string prop in levelMap)
                     {
-                        int startidx = prop.IndexOf("(") + 1;
-                        int endidx = prop.IndexOf(",");
-                        string xpos = prop.Substring(startidx, endidx - startidx);
-                        float nxpos = float.Parse(xpos, CultureInfo.InvariantCulture);
-                        if (nxpos < minx) minx = nxpos;
-                        if (nxpos > maxx) maxx = nxpos;
+                        if (prop.Contains("pos:"))
+                        {
+                            int startidx = prop.IndexOf("(") + 1;
+                            int endidx = prop.IndexOf(",");
+                            string xpos = prop.Substring(startidx, endidx - startidx);
+                            float nxpos = float.Parse(xpos, CultureInfo.InvariantCulture);
+                            if (nxpos < minx) minx = nxpos;
+                            if (nxpos > maxx) maxx = nxpos;
+                        }
                     }
+                }
+                catch { 
+                
                 }
                 cube player = GameObject.Find("Player").GetComponent<cube>();
                 newStartX = player.respawnPoint.position.x.ToString();
                 startX = player.respawnPoint.position.x;
                 originalStartX = player.respawnPoint.position.x;
+                newStartY = player.respawnPoint.position.y.ToString();
+                startY = player.respawnPoint.position.y;
+                originalStartY = player.respawnPoint.position.y;
             }
 
         }
@@ -436,7 +433,8 @@ namespace TrideDashModder
             width = GUI.TextField(new Rect(300, 120, 100, 30), width, 4);
             height = GUI.TextField(new Rect(400, 120, 99, 30), height, 4);
             disableBlocks = GUI.Toggle(new Rect(300, 60, 100, 100), disableBlocks, "Disable Blocks?");
-            newStartX = GUI.TextField(new Rect(300, 150, 300, 30), newStartX);
+            newStartX = GUI.TextField(new Rect(300, 150, 100, 30), newStartX);
+            newStartY = GUI.TextField(new Rect(400, 150, 99, 30), newStartY);
             if (!float.TryParse(speedhack, out numspeed))
             {
                 if (speedhack == "")
@@ -503,12 +501,24 @@ namespace TrideDashModder
                 }
             }
             lastStartX = newStartX;
+            if (!float.TryParse(newStartY, out startY))
+            {
+                if (newStartY == "")
+                {
+                    newStartY = "0";
+                }
+                else
+                {
+                    newStartY = lastStartY;
+                }
+            }
+            lastStartY = newStartY;
         }
         private void DrawMenu()
         {
             if (menu)
             {
-                Rect window = GUI.Window(0, new Rect(0, 300, 500, 700), DrawWindowGUI, "TrideHack v0.2.1");
+                Rect window = GUI.Window(0, new Rect(0, 300, 500, 700), DrawWindowGUI, "TrideHack v0.2.2");
                // Rect plugins = GUI.Window(0, new Rect(500, 300, 500, 700), DrawPluginsGUI, "Plugins");
             }
             bool inGame = SceneManager.GetActiveScene().name == "playLevel";
@@ -519,6 +529,10 @@ namespace TrideDashModder
             if (inGame)
             {
                 cube player = GameObject.Find("Player").GetComponent<cube>();
+                if (player.winScreen.activeSelf)
+                {
+                    GUI.Box(new Rect((Screen.width / 2) - 150, 650, 300, 30), "Using TrideHack v0.2.2");
+                }
                 if (noclipWasEnabled && player.winScreen.activeSelf)
                 {
                     GUI.Box(new Rect((Screen.width / 2) - 150, 800, 300, 30), "NoClip was used");
@@ -526,10 +540,6 @@ namespace TrideDashModder
                 if (speedhackWasEnabled && player.winScreen.activeSelf)
                 {
                     GUI.Box(new Rect((Screen.width / 2) - 150, 830, 300, 30), "Speedhack was used");
-                }
-                if (startposWasEnabled && player.winScreen.activeSelf)
-                {
-                    GUI.Box(new Rect((Screen.width / 2) - 150, 860, 300, 30), "Startpos was used");
                 }
             }
             if (displayNewBest)
