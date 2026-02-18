@@ -8,6 +8,10 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TDAPI;
+
+[assembly: MelonInfo(typeof(TrideDashModder.TrideHack), "Tride Hack", TrideDashModder.TrideHack.version, "Ender(suzu)", "https://github.com/endert1099/TrideHack/releases/latest")]
+[assembly: MelonGame("DefaultCompany", "Tride Dash")]
+
 namespace TrideDashModder
 {
 	public class TrideHackMod : ModBase<TrideHackMod>
