@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrideHack", "TrideHack\TrideHack.csproj", "{DC68CE60-E2DD-4CB1-8418-0E996376488B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TDAPI", "TDAPI\TDAPI.csproj", "{56229B21-58E0-4CAB-A36E-E530F375868B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC68CE60-E2DD-4CB1-8418-0E996376488B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC68CE60-E2DD-4CB1-8418-0E996376488B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC68CE60-E2DD-4CB1-8418-0E996376488B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC68CE60-E2DD-4CB1-8418-0E996376488B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56229B21-58E0-4CAB-A36E-E530F375868B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56229B21-58E0-4CAB-A36E-E530F375868B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56229B21-58E0-4CAB-A36E-E530F375868B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56229B21-58E0-4CAB-A36E-E530F375868B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {87895725-2300-45B1-BCB9-EFCD8CDA4BCE}
+	EndGlobalSection
+EndGlobal
