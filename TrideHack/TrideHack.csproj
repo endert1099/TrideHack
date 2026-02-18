@@ -295,7 +295,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="Mods.cs" />
+		<Compile Include="TrideHack.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

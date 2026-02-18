@@ -79,10 +79,10 @@ namespace TrideDashModder
         }
 	}
 
-    public class Mods : MelonMod
+    public class TrideHack : MelonMod
     {
 		// Mod Version
-		public const string version = "0.3.0";
+		public const string version = "0.3.1";
 
 		// All the private variables used for updates
 		private int lastFrameAttempts = 0;
@@ -425,12 +425,12 @@ namespace TrideDashModder
 				if (loaded)
 				{
 					MelonLogger.Msg("Mod loaded: " + mod.Name + " v" + mod.Version);
-					ModList<TrideHackMod>.CreateMod(mod);
 				}
 				else
 				{
 					MelonLogger.Warning("Failed to load mod: " + mod.Name + " v" + mod.Version + " will not be included");
 				}
+				MelonLogger.Msg("Successfully loaded TrideHack v" + TrideHack.version + " running TDAPI v" + TDAPIInfo.Version);
             }
             
             /*
@@ -541,7 +541,7 @@ namespace TrideDashModder
         {
             if (v.menuEnabled)
             {
-                Rect window = GUI.Window(0, new Rect(0, 300, 500, 700), DrawWindowGUI, "TrideHack v" + Mods.version);
+                Rect window = GUI.Window(0, new Rect(0, 300, 500, 700), DrawWindowGUI, "TrideHack v" + TrideHack.version);
                // Rect plugins = GUI.Window(0, new Rect(500, 300, 500, 700), DrawPluginsGUI, "Plugins");
             }
 
@@ -552,7 +552,7 @@ namespace TrideDashModder
 
                 if (v.player.winScreen.activeSelf)
                 {
-                    GUI.Box(new Rect((Screen.width / 2) - 150, 650, 300, 30), "Using TrideHack v" + Mods.version);
+                    GUI.Box(new Rect((Screen.width / 2) - 150, 650, 300, 30), "Using TrideHack v" + TrideHack.version);
 					if (v.noclipWasEnabled) GUI.Box(new Rect((Screen.width / 2) - 150, 800, 300, 30), "NoClip was used");
 					if (v.speedhackWasEnabled) GUI.Box(new Rect((Screen.width / 2) - 150, 830, 300, 30), "Speedhack was used");
 				}

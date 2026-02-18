@@ -1,7 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TDAPI
 {
+	public static class TDAPIInfo
+	{
+		public static readonly string Version = "0.1.0";
+	}
 	// Allows for the same structure of mods but perhaps for other areas
 	public abstract class ModBase<T> where T : ModBase<T>, new()
 	{
@@ -25,6 +30,7 @@ namespace TDAPI
 
 		public virtual bool Load()
 		{
+			ModList<T>.CreateMod(instance);
 			return true;
 		}
 
