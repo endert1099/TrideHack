@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
-using System.Globalization;
-using System.IO;
-using System.Linq;
+﻿using System.Globalization;
+using System.Reflection;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -86,7 +82,7 @@ namespace TrideDashModder
     public class TrideHack : MelonMod
     {
 		// Mod Version
-		public const string version = "0.3.1";
+		public const string version = "0.3.2";
 
 		// All the private variables used for updates
 		private int lastFrameAttempts = 0;
@@ -146,6 +142,7 @@ namespace TrideDashModder
 			{
 				v.noclip = !v.noclip;
 				v.noclipChangedThisTick = true;
+				MelonLogger.Msg("Noclip changed this tick");
 			}
 
 			// Backup levels
@@ -201,6 +198,31 @@ namespace TrideDashModder
 				return;
             }
 
+			// Set noclip colliders
+			if(firstFrameOfScene)
+			{
+				objects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("spike")); //TODO: make this more objects than spike
+				blocks = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("block"));
+				MelonLogger.Msg((objects.Count(), blocks.Count()));
+
+				if (v.noclip)
+				{
+					foreach (var obj in objects)
+					{
+						Collider2D collider = obj.GetComponent<Collider2D>();
+						collider.enabled = false;
+					}
+					if (v.disableBlocks)
+					{
+						foreach (var obj in blocks)
+						{
+							Collider2D collider = obj.GetComponent<Collider2D>();
+							collider.enabled = false;
+						}
+					}
+				}
+			}
+
             // Clear signs of me having a mental breakdown
             // 2 years later suzu here and I dont know whats wrong with this
             if (v.noclipChangedThisTick)
@@ -208,13 +230,13 @@ namespace TrideDashModder
 				v.noclipChangedThisTick = false;
                 foreach (var obj in objects)
                 {
-					obj.GetComponent<Collider2D>().enabled = v.noclip;
+					obj.GetComponent<Collider2D>().enabled = !v.noclip;
 				}
                 if(v.disableBlocks)
                 {
 					foreach (var b in blocks)
 					{
-						b.GetComponent<Collider2D>().enabled = v.noclip;
+						b.GetComponent<Collider2D>().enabled = !v.noclip;
 					}
 				}
 			}
@@ -227,7 +249,7 @@ namespace TrideDashModder
 				{
 					foreach (var b in blocks)
 					{
-						b.GetComponent<Collider2D>().enabled = v.noclip;
+						b.GetComponent<Collider2D>().enabled = !v.noclip;
 					}
 				}
 				else
@@ -242,8 +264,13 @@ namespace TrideDashModder
 			// Restart key
 			if (Input.GetKeyDown(KeyCode.R))
             {
-                Rigidbody2D rb = v.player.rb;
-                if(rb.position.x >= 0) v.player.kill();
+				// Set iframes to 0!!
+				Type cubetype = typeof(cube);
+				FieldInfo iframes = cubetype.GetField("invincibilityFrames", BindingFlags.NonPublic | BindingFlags.Instance);
+				iframes.SetValue(v.player, 0f);
+
+				Rigidbody2D rb = v.player.rb;
+                v.player.kill();
 				v.player.rb.velocity = new Vector2(v.player.rb.velocity.x, 0);
                 rb.gravityScale = Math.Abs(v.player.rb.gravityScale);
             }
@@ -360,25 +387,6 @@ namespace TrideDashModder
             firstFrameOfScene = true;
             if(sceneName == "playLevel")
             {
-				objects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("spike")); //TODO: make this more objects than spike
-				blocks = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("block"));
-				if (v.noclip)
-                {
-                    foreach (var obj in objects)
-                    {
-                        Collider2D collider = obj.GetComponent<Collider2D>();
-                        collider.enabled = false;
-                    }
-                    if (v.disableBlocks)
-                    {
-						foreach (var obj in blocks)
-						{
-							Collider2D collider = obj.GetComponent<Collider2D>();
-							collider.enabled = false;
-						}
-					}
-                }
-
                 // Percent bar
                 // Todo make this good
                 try
@@ -434,17 +442,17 @@ namespace TrideDashModder
 				{
 					MelonLogger.Warning("Failed to load mod: " + mod.Name + " v" + mod.Version + " will not be included");
 				}
-				MelonLogger.Msg("Successfully loaded TrideHack v" + TrideHack.version + " running TDAPI v" + TDAPIInfo.Version);
             }
-            
-            /*
+			MelonLogger.Msg("Successfully loaded TrideHack v" + TrideHack.version + " running TDAPI v" + TDAPIInfo.Version);
+
+			/*
              * I Just wanna keep this code here as a relic for all to enjoy
              * Man i really improved at programming
              if(Plugin.GetCount() <= 0)
             {
                 MelonLogger.Msg($"Currently {Plugin.GetCount()} plugins loaded, less than 1.");
             }*/
-        }
+		}
         private void DrawWindowGUI(int windowID)
         {
             // This could probably be improved but I dont wanna
