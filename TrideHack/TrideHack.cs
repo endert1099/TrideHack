@@ -315,7 +315,7 @@ namespace TrideDashModder
             // New Best and Best ever
             if (!Directory.Exists(v.datafolder)) Directory.CreateDirectory(v.datafolder);
             if (!File.Exists(v.bestsfile)) File.Create(v.bestsfile);
-			if (v.levelBest < v.lastProgress && v.startX == v.originalStartX && v.progress < v.lastProgress)
+			if (v.levelBest < v.lastProgress && Mathf.Abs(v.startX - v.originalStartX) < 0.01 && v.progress < v.lastProgress)
 			{
 				v.levelBest = v.lastProgress;
 
@@ -424,7 +424,30 @@ namespace TrideDashModder
                 newStartY = v.player.respawnPoint.position.y.ToString();
 				v.startY = v.player.respawnPoint.position.y;
 				v.originalStartY = v.player.respawnPoint.position.y;
-            }
+
+				v.levelBest = v.lastProgress;
+
+				string filetext = File.ReadAllText(v.bestsfile);
+				List<string> data = filetext.Split(',').ToList(); //TODO: Might cause some international decimal format problems
+				List<float> bestvals = new List<float>();
+				List<string> names = new List<string>();
+
+				foreach (string obj in data)
+				{
+					List<string> objcontents = obj.Split(':').ToList();
+					string last = objcontents.Last();
+					float lastf;
+					if (float.TryParse(last, out lastf))
+					{
+						bestvals.Add(lastf);
+					}
+					names.Add(objcontents.First());
+				}
+
+				string levelName = PlayerPrefs.GetString("levelName");
+				if (names.Contains(levelName)) v.levelBest = bestvals[names.IndexOf(levelName)];
+				else v.levelBest = 0;
+			}
 
         }
         public override void OnInitializeMelon()
