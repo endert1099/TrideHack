@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using MelonLoader;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TDAPI;
@@ -37,6 +38,7 @@ namespace TrideDashModder
 		// Speedhack
 		public bool isSlowed = false;
 		public float numspeed = 0.25f;
+		public bool speedhackAudio = true;
 
 		// NoClip
 		public bool noclip = false;
@@ -82,7 +84,7 @@ namespace TrideDashModder
     public class TrideHack : MelonMod
     {
 		// Mod Version
-		public const string version = "0.3.2";
+		public const string version = "0.3.3";
 
 		// All the private variables used for updates
 		private int lastFrameAttempts = 0;
@@ -131,18 +133,17 @@ namespace TrideDashModder
 				v.isSlowed = !v.isSlowed;
 			}
 
-			// Autowin
-			if (Input.GetKeyDown(KeyCode.LeftControl))
-			{
-				v.player.win();
-			}
+			// I refuse to make this in v because its only used once
+			loadLevelToPlay[] levelLoaders = GameObject.FindObjectsByType<loadLevelToPlay>(FindObjectsSortMode.None);
+
+			if (v.speedhackAudio && levelLoaders.Length != 0) levelLoaders[0].music.pitch = Time.timeScale;
+			else if(levelLoaders.Length != 0) levelLoaders[0].music.pitch = 1f;
 
 			//NoClip
 			if (Input.GetKeyDown(KeyCode.N))
 			{
 				v.noclip = !v.noclip;
 				v.noclipChangedThisTick = true;
-				MelonLogger.Msg("Noclip changed this tick");
 			}
 
 			// Backup levels
@@ -198,12 +199,17 @@ namespace TrideDashModder
 				return;
             }
 
+			// Autowin
+			if (Input.GetKeyDown(KeyCode.LeftControl))
+			{
+				v.player.win();
+			}
+
 			// Set noclip colliders
-			if(firstFrameOfScene)
+			if (firstFrameOfScene)
 			{
 				objects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("spike")); //TODO: make this more objects than spike
 				blocks = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name.Contains("block"));
-				MelonLogger.Msg((objects.Count(), blocks.Count()));
 
 				if (v.noclip)
 				{
@@ -280,13 +286,8 @@ namespace TrideDashModder
             {
                 Rigidbody2D rb = v.player.rb;
                 float lvlLen = v.maxx - v.minx;
-                if (firstFrameOfScene)
-                {
-					v.startingPercent = (float)Math.Round(rb.position.x / lvlLen, 4);
-                    firstFrameOfScene = false;
-                }
-                double newProgress = rb.position.x / lvlLen;
-                newProgress = newProgress - v.startingPercent;
+                double newProgress = (rb.position.x - v.startX) / lvlLen;
+                //newProgress = newProgress - v.startingPercent;
 				v.progress = (float)Math.Round(newProgress, 4);
 				v.progress = v.progress * 100;
             }
@@ -429,6 +430,19 @@ namespace TrideDashModder
         public override void OnInitializeMelon()
         {
             MelonEvents.OnGUI.Subscribe(DrawMenu, 0); // The higher the value, the lower the priority.
+													  // Why did I bother with the above comment
+			// Method patching
+			HarmonyLib.Harmony harmonyInstance = this.HarmonyInstance;
+
+			MethodInfo jumpOrbCollision = typeof(deathSpike).GetMethod("OnTriggerStay2D", BindingFlags.NonPublic | BindingFlags.Instance);
+			Action<Collider2D> orbAction = orbSpaceBar;
+			harmonyInstance.Patch(jumpOrbCollision, new HarmonyMethod(orbAction.GetMethodInfo()));
+
+			MethodInfo keyBinds = typeof(editorObject).GetMethod("keyBinds", BindingFlags.NonPublic | BindingFlags.Instance);
+			Action<editorObject> keybindAction = newKeyBinds;
+			harmonyInstance.Patch(keyBinds, null, new HarmonyMethod(keybindAction.GetMethodInfo()));
+
+
 			mods = ModList<TrideHackMod>.GetMods();
             foreach (TrideHackMod mod in mods)
             {
@@ -465,9 +479,10 @@ namespace TrideDashModder
             speedhack = GUI.TextField(new Rect(300, 30, 100, 30), speedhack, 4);
             width = GUI.TextField(new Rect(300, 120, 100, 30), width, 4);
             height = GUI.TextField(new Rect(400, 120, 99, 30), height, 4);
-			v.disableBlocks = GUI.Toggle(new Rect(300, 60, 100, 100), v.disableBlocks, "Disable Blocks?");
+			v.disableBlocks = GUI.Toggle(new Rect(300, 60, 100, 100), v.disableBlocks, "Disable Blocks");
             newStartX = GUI.TextField(new Rect(300, 150, 100, 30), newStartX);
             newStartY = GUI.TextField(new Rect(400, 150, 99, 30), newStartY);
+			v.speedhackAudio = GUI.Toggle(new Rect(400, 30, 100, 100), v.speedhackAudio, "Speedhack\naudio");
 
             if (!float.TryParse(speedhack, out v.numspeed))
             {
@@ -579,5 +594,89 @@ namespace TrideDashModder
                 GUI.Box(new Rect((Screen.width / 2) - 150, 500, 300, 30), "New Best: " + v.levelBest.ToString());
             }
         }
-    }
+		private static void orbSpaceBar(Collider2D collision)
+		{
+			TrideHackVariables v = TrideHackVariables.GetInstance();
+			if ((Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.UpArrow)) && !v.player.alreadyJumped)
+			{
+				if (collision.tag == "yellowOrb")
+				{
+					v.player.jumpOrb(0);
+				}
+				else if (collision.tag == "pinkOrb")
+				{
+					v.player.jumpOrb(1);
+				}
+				else if (collision.tag == "greenOrb")
+				{
+					v.player.jumpOrb(2);
+				}
+				else if (collision.tag == "blueOrb")
+				{
+					v.player.jumpOrb(3);
+				}
+			}
+		}
+		
+		private static void newKeyBinds(editorObject __instance)
+		{
+			editorObject e = __instance; // The param name is required by harmony
+
+			if (Input.GetKeyDown(KeyCode.R))
+			{
+				e.editor.rotation = Quaternion.Euler(0f, 0f, Mathf.FloorToInt(e.editor.rotation.eulerAngles.z - 90f));
+			}
+
+			if (Input.GetKeyDown(KeyCode.Delete) || Input.GetKeyDown(KeyCode.Backspace))
+			{
+				e.editor.delete = true;
+			}
+
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+			{
+				if (Input.GetKeyDown(KeyCode.W))
+				{
+					e.transform.position = new Vector2(e.transform.position.x, e.transform.position.y - 0.9f);
+				}
+				else if (Input.GetKeyDown(KeyCode.A))
+				{
+					e.transform.position = new Vector2(e.transform.position.x + 0.9f, e.transform.position.y);
+				}
+				else if (Input.GetKeyDown(KeyCode.S))
+				{
+					e.transform.position = new Vector2(e.transform.position.x, e.transform.position.y + 0.9f);
+				}
+				else if (Input.GetKeyDown(KeyCode.D))
+				{
+					e.transform.position = new Vector2(e.transform.position.x - 0.9f, e.transform.position.y);
+				}
+
+				if (Input.GetKeyDown(KeyCode.R))
+				{
+					e.editor.rotation = Quaternion.Euler(0f, 0f, Mathf.FloorToInt(e.editor.rotation.eulerAngles.z + 180f)); // Double bc we already did it
+				}
+
+				if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+				{
+					if (Input.GetKeyDown(KeyCode.R))
+					{
+						e.editor.rotation = Quaternion.Euler(0f, 0f, Mathf.FloorToInt(e.editor.rotation.eulerAngles.z - 177f));
+					}
+				}
+			}
+
+			if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+			{
+				if(Input.GetKeyDown(KeyCode.R))
+				{
+					e.editor.rotation = Quaternion.Euler(0f, 0f, Mathf.FloorToInt(e.editor.rotation.eulerAngles.z + 89f));
+				}
+			}
+		}
+
+		private static void debugMethod(levelEditor __instance)
+		{
+			MelonLogger.Msg(__instance.movement.x);
+		}
+	}
 }
